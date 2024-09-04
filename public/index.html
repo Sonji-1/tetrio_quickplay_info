@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TETR.IO 유저 정보</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #userInfo {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .user-data {
+            margin-bottom: 10px;
+        }
+        .user-data strong {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>TETR.IO 유저 정보</h1>
+    <div class="input-container">
+        <input type="text" id="username" placeholder="사용자 이름 입력">
+        <button onclick="getUserInfo()">검색</button>
+    </div>
+    <div id="userInfo"></div>
+
+    <script>
+        async function getUserInfo() {
+            const username = document.getElementById('username').value;
+            const userInfoDiv = document.getElementById('userInfo');
+            userInfoDiv.innerHTML = '로딩 중...';
+
+            try {
+                console.log(`Requesting data for user: ${username}`);
+                const response = await fetch(`/api/user/${username}`);
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Received data from server:', JSON.stringify(data, null, 2));
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                userInfoDiv.innerHTML = `
+                    <h2>${data.username || '-'}</h2>
+                    <div class="user-data"><strong>국가:</strong> ${data.country || '-'}</div>
+                    <div class="user-data"><strong>가입일:</strong> ${data.joinDate || '-'}</div>
+                    <div class="user-data"><strong>플레이한 게임 수:</strong> ${data.gamesPlayed || '-'}</div>
+                    <div class="user-data"><strong>이긴 게임 수:</strong> ${data.gamesWon || '-'}</div>
+                    <div class="user-data"><strong>총 플레이 시간:</strong> ${data.gameTime || '-'}</div>
+                    <div class="user-data"><strong>XP:</strong> ${data.xp || '-'}</div>
+                    <div class="user-data"><strong>친구 수:</strong> ${data.friendCount || '-'}</div>
+                `;
+                console.log('User info displayed successfully');
+            } catch (error) {
+                console.error('Error in getUserInfo:', error);
+                userInfoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
