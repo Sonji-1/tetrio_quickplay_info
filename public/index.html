@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f0f0f0;
@@ -17,10 +17,11 @@
             color: #333;
             text-align: center;
         }
-        .input-container {
+        .input-container, .button-container {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         input[type="text"] {
             padding: 10px;
@@ -35,13 +36,14 @@
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 0 4px 4px 0;
+            border-radius: 4px;
             cursor: pointer;
+            margin: 5px;
         }
         button:hover {
             background-color: #45a049;
         }
-        #userInfo {
+        #infoContainer {
             background-color: white;
             padding: 20px;
             border-radius: 5px;
@@ -51,10 +53,10 @@
             color: red;
             text-align: center;
         }
-        .user-data {
+        .info-data {
             margin-bottom: 10px;
         }
-        .user-data strong {
+        .info-data strong {
             display: inline-block;
             width: 150px;
             font-weight: bold;
@@ -67,40 +69,255 @@
         <input type="text" id="username" placeholder="사용자 이름 입력">
         <button onclick="getUserInfo()">검색</button>
     </div>
-    <div id="userInfo"></div>
+    <div class="button-container">
+        <button onclick="showInfo('general')">일반 정보</button>
+        <button onclick="getLeagueInfo()">Tetra League</button> <!-- Tetra League 정보 요청 -->
+        <button onclick="get40LinesInfo()">40 Lines</button> <!-- 40 Lines 정보 요청 -->
+        <button onclick="getBlitzInfo()">Blitz</button> <!-- Blitz 정보 요청 -->
+        <button onclick="getZenInfo()">Zen</button> <!-- Zen 정보 요청 -->
+        <button onclick="getQuickPlayInfo()">Quick Play</button> <!-- Quick Play 정보 요청 -->
+    </div>
+    <div id="infoContainer"></div>
 
     <script>
+        let userData; // 전역 변수로 선언
+
         async function getUserInfo() {
             const username = document.getElementById('username').value;
-            const userInfoDiv = document.getElementById('userInfo');
-            userInfoDiv.innerHTML = '로딩 중...';
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
 
             try {
-                console.log(`Requesting data for user: ${username}`);
                 const response = await fetch(`/api/user/${username}`);
-                console.log('Response status:', response.status);
+                const userInfo = await response.json();
+
+                if (userInfo.error) {
+                    throw new Error(userInfo.error);
+                }
+
+                let content = `
+                    <h2>${userInfo.username || '사용자 이름 없음'}의 일반 정보</h2>
+                    <div class="info-data"><strong>국가:</strong> ${userInfo.country || '비공개'}</div>
+                    <div class="info-data"><strong>가입일:</strong> ${new Date(userInfo.ts).toLocaleString()}</div>
+                    <div class="info-data"><strong>플레이한 게임 수:</strong> ${userInfo.gamesplayed || '정보 없음'}</div>
+                    <div class="info-data"><strong>이긴 게임 수:</strong> ${userInfo.gameswon || '정보 없음'}</div>
+                    <div class="info-data"><strong>총 플레이 시간:</strong> ${(userInfo.gametime / 3600).toFixed(2) || '정보 없음'} 시간</div>
+                    <div class="info-data"><strong>XP:</strong> ${userInfo.xp ? userInfo.xp.toFixed(2) : '정보 없음'}</div>
+                    <div class="info-data"><strong>친구 수:</strong> ${userInfo.friend_count || '정보 없음'}</div>
+                `;
+                infoDiv.innerHTML = content;
+                userData = userInfo; // 사용자 정보를 userData에 저장
+            } catch (error) {
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+
+        async function getQuickPlayInfo() {
+            const username = document.getElementById('username').value;
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/quickplay/${username}`);
                 const data = await response.json();
-                console.log('Received data from server:', JSON.stringify(data, null, 2));
+
+                console.log('Quick Play API 응답:', data); // 추가된 로그
 
                 if (data.error) {
                     throw new Error(data.error);
                 }
 
-                userInfoDiv.innerHTML = `
-                    <h2>${data.username || '-'}</h2>
-                    <div class="user-data"><strong>국가:</strong> ${data.country || '-'}</div>
-                    <div class="user-data"><strong>가입일:</strong> ${data.joinDate || '-'}</div>
-                    <div class="user-data"><strong>플레이한 게임 수:</strong> ${data.gamesPlayed || '-'}</div>
-                    <div class="user-data"><strong>이긴 게임 수:</strong> ${data.gamesWon || '-'}</div>
-                    <div class="user-data"><strong>총 플레이 시간:</strong> ${data.gameTime || '-'}</div>
-                    <div class="user-data"><strong>XP:</strong> ${data.xp || '-'}</div>
-                    <div class="user-data"><strong>친구 수:</strong> ${data.friendCount || '-'}</div>
+                let content = `
+                    <h2>${username}의 Quick Play 정보</h2>
+                    <div class="info-data"><strong>레벨:</strong> ${data.level || '기록 없음'}</div>
+                    <div class="info-data"><strong>점수:</strong> ${data.score || '기록 없음'}</div>
+                    <div class="info-data"><strong>놓은 블록 수:</strong> ${data.pieces || '기록 없음'}</div>
+                    <div class="info-data"><strong>타임스탬프:</strong> ${data.timeStamp || '기록 없음'}</div>
                 `;
-                console.log('User info displayed successfully');
+                infoDiv.innerHTML = content;
             } catch (error) {
-                console.error('Error in getUserInfo:', error);
-                userInfoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
             }
+        }
+
+        async function getLeagueInfo() {
+            const username = document.getElementById('username').value;
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/tetraleague/${username}`);
+                const data = await response.json();
+
+                console.log('Tetra League API 응답:', data); // 추가된 로그
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                let content = `
+                    <h2>${username}의 Tetra League 정보</h2>
+                    <div class="info-data"><strong>랭크:</strong> ${data.rank || '기록 없음'}</div>
+                    <div class="info-data"><strong>레이팅:</strong> ${data.rating || '기록 없음'}</div>
+                    <div class="info-data"><strong>플레이한 게임 수:</strong> ${data.gamesPlayed || '기록 없음'}</div>
+                    <div class="info-data"><strong>이긴 게임 수:</strong> ${data.gamesWon || '기록 없음'}</div>
+                    <div class="info-data"><strong>승률:</strong> ${data.winRate || '기록 없음'}</div>
+                `;
+                infoDiv.innerHTML = content;
+            } catch (error) {
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+
+        async function get40LinesInfo() {
+            const username = document.getElementById('username').value;
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/40lines/${username}`);
+                const data = await response.json();
+
+                console.log('40 Lines API 응답:', data); // 추가된 로그
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                let content = `
+                    <h2>${username}의 40 Lines 정보</h2>
+                    <div class="info-data"><strong>최고 기록:</strong> ${data.time || '기록 없음'}</div>
+                    <div class="info-data"><strong>PPS:</strong> ${data.pps || '기록 없음'}</div>
+                    <div class="info-data"><strong>Finesse:</strong> ${data.finesse || '기록 없음'}</div>
+                    <div class="info-data"><strong>타임스탬프:</strong> ${data.timeStamp || '기록 없음'}</div>
+                `;
+                infoDiv.innerHTML = content;
+            } catch (error) {
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+
+        async function getBlitzInfo() {
+            const username = document.getElementById('username').value;
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/blitz/${username}`);
+                const data = await response.json();
+
+                console.log('Blitz API 응답:', data); // 추가된 로그
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                let content = `
+                    <h2>${username}의 Blitz 정보</h2>
+                    <div class="info-data"><strong>최고 점수:</strong> ${data.score || '기록 없음'}</div>
+                    <div class="info-data"><strong>PPS:</strong> ${data.pps || '기록 없음'}</div>
+                    <div class="info-data"><strong>APM:</strong> ${data.apm || '기록 없음'}</div>
+                    <div class="info-data"><strong>타임스탬프:</strong> ${data.timeStamp || '기록 없음'}</div>
+                `;
+                infoDiv.innerHTML = content;
+            } catch (error) {
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+
+        async function getZenInfo() {
+            const username = document.getElementById('username').value;
+            const infoDiv = document.getElementById('infoContainer');
+            infoDiv.innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/zen/${username}`);
+                const data = await response.json();
+
+                console.log('Zen API 응답:', data); // 추가된 로그
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                let content = `
+                    <h2>${username}의 Zen 정보</h2>
+                    <div class="info-data"><strong>레벨:</strong> ${data.level || '기록 없음'}</div>
+                    <div class="info-data"><strong>점수:</strong> ${data.score || '기록 없음'}</div>
+                    <div class="info-data"><strong>놓은 블록 수:</strong> ${data.pieces || '기록 없음'}</div>
+                    <div class="info-data"><strong>타임스탬프:</strong> ${data.timeStamp || '기록 없음'}</div>
+                `;
+                infoDiv.innerHTML = content;
+            } catch (error) {
+                infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
+            }
+        }
+
+        function showInfo(category) {
+            if (!userData) {
+                alert('먼저 사용자를 검색해주세요.');
+                return;
+            }
+
+            const infoDiv = document.getElementById('infoContainer');
+            let content = '';
+
+            switch (category) {
+                case 'general':
+                    content = `
+                        <h2>${userData.username}의 일반 정보</h2>
+                        <div class="info-data"><strong>국가:</strong> ${userData.country || '비공개'}</div>
+                        <div class="info-data"><strong>가입일:</strong> ${new Date(userData.ts).toLocaleString()}</div>
+                        <div class="info-data"><strong>플레이한 게임 수:</strong> ${userData.gamesplayed || '정보 없음'}</div>
+                        <div class="info-data"><strong>이긴 게임 수:</strong> ${userData.gameswon || '정보 없음'}</div>
+                        <div class="info-data"><strong>총 플레이 시간:</strong> ${(userData.gametime / 3600).toFixed(2)} 시간</div>
+                        <div class="info-data"><strong>XP:</strong> ${userData.xp.toFixed(2)}</div>
+                        <div class="info-data"><strong>친구 수:</strong> ${userData.friend_count}</div>
+                    `;
+                    break;
+                case 'league':
+                    const league = userData.user.league;
+                    content = `
+                        <h2>${userData.user.username}의 Tetra League 정보</h2>
+                        <div class="info-data"><strong>랭크:</strong> ${league.rank}</div>
+                        <div class="info-data"><strong>레이팅:</strong> ${league.rating.toFixed(2)}</div>
+                        <div class="info-data"><strong>글리코:</strong> ${league.glicko.toFixed(2)}</div>
+                        <div class="info-data"><strong>RD:</strong> ${league.rd.toFixed(2)}</div>
+                        <div class="info-data"><strong>APM:</strong> ${league.apm.toFixed(2)}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${league.pps.toFixed(2)}</div>
+                        <div class="info-data"><strong>VS:</strong> ${league.vs.toFixed(2)}</div>
+                    `;
+                    break;
+                case '40l':
+                    const sprint = userData.records.sprint;
+                    content = `
+                        <h2>${userData.user.username}의 40 Lines 정보</h2>
+                        <div class="info-data"><strong>최고 기록:</strong> ${sprint.record ? (sprint.record.endcontext.finalTime / 1000).toFixed(3) + '초' : '기록 없음'}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${sprint.record ? sprint.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
+                        <div class="info-data"><strong>Finesse:</strong> ${sprint.record ? sprint.record.endcontext.finesse.toFixed(2) + '%' : '기록 없음'}</div>
+                    `;
+                    break;
+                case 'blitz':
+                    const blitz = userData.records.blitz;
+                    content = `
+                        <h2>${userData.user.username}의 Blitz 정보</h2>
+                        <div class="info-data"><strong>최고 점수:</strong> ${blitz.record ? blitz.record.endcontext.score.toLocaleString() : '기록 없음'}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${blitz.record ? blitz.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
+                        <div class="info-data"><strong>APM:</strong> ${blitz.record ? blitz.record.endcontext.apm.toFixed(2) : '기록 없음'}</div>
+                    `;
+                    break;
+                case 'zen':
+                    const zen = userData.user.zen;
+                    content = `
+                        <h2>${userData.user.username}의 Zen 정보</h2>
+                        <div class="info-data"><strong>레벨:</strong> ${zen.level}</div>
+                        <div class="info-data"><strong>점수:</strong> ${zen.score.toLocaleString()}</div>
+                        <div class="info-data"><strong>놓은 블록 수:</strong> ${zen.pieces.toLocaleString()}</div>
+                    `;
+                    break;
+            }
+
+            infoDiv.innerHTML = content;
         }
     </script>
 </body>
