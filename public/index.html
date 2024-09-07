@@ -95,21 +95,78 @@
                     throw new Error(userInfo.error);
                 }
 
-                let content = `
-                    <h2>${userInfo.username || '사용자 이름 없음'}의 일반 정보</h2>
-                    <div class="info-data"><strong>국가:</strong> ${userInfo.country || '비공개'}</div>
-                    <div class="info-data"><strong>가입일:</strong> ${new Date(userInfo.ts).toLocaleString()}</div>
-                    <div class="info-data"><strong>플레이한 게임 수:</strong> ${userInfo.gamesplayed || '정보 없음'}</div>
-                    <div class="info-data"><strong>이긴 게임 수:</strong> ${userInfo.gameswon || '정보 없음'}</div>
-                    <div class="info-data"><strong>총 플레이 시간:</strong> ${(userInfo.gametime / 3600).toFixed(2) || '정보 없음'} 시간</div>
-                    <div class="info-data"><strong>XP:</strong> ${userInfo.xp ? userInfo.xp.toFixed(2) : '정보 없음'}</div>
-                    <div class="info-data"><strong>친구 수:</strong> ${userInfo.friend_count || '정보 없음'}</div>
-                `;
-                infoDiv.innerHTML = content;
                 userData = userInfo; // 사용자 정보를 userData에 저장
+                showInfo('general'); // 일반 정보 표시
             } catch (error) {
                 infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
             }
+        }
+
+        function showInfo(category) {
+            if (!userData) {
+                alert('먼저 사용자를 검색해주세요.');
+                return;
+            }
+
+            const infoDiv = document.getElementById('infoContainer');
+            let content = '';
+
+            switch (category) {
+                case 'general':
+                    content = `
+                        <h2>${userData.username}의 일반 정보</h2>
+                        <div class="info-data"><strong>국가:</strong> ${userData.country || '비공개'}</div>
+                        <div class="info-data"><strong>가입일:</strong> ${new Date(userData.ts).toLocaleString()}</div>
+                        <div class="info-data"><strong>플레이한 게임 수:</strong> ${userData.gamesplayed || '정보 없음'}</div>
+                        <div class="info-data"><strong>이긴 게임 수:</strong> ${userData.gameswon || '정보 없음'}</div>
+                        <div class="info-data"><strong>총 플레이 시간:</strong> ${(userData.gametime / 3600).toFixed(2)} 시간</div>
+                        <div class="info-data"><strong>XP:</strong> ${userData.xp ? userData.xp.toFixed(2) : '정보 없음'}</div>
+                        <div class="info-data"><strong>친구 수:</strong> ${userData.friend_count || '정보 없음'}</div>
+                    `;
+                    break;
+                case 'league':
+                    const league = userData.user.league;
+                    content = `
+                        <h2>${userData.user.username}의 Tetra League 정보</h2>
+                        <div class="info-data"><strong>랭크:</strong> ${league.rank}</div>
+                        <div class="info-data"><strong>레이팅:</strong> ${league.rating.toFixed(2)}</div>
+                        <div class="info-data"><strong>글리코:</strong> ${league.glicko.toFixed(2)}</div>
+                        <div class="info-data"><strong>RD:</strong> ${league.rd.toFixed(2)}</div>
+                        <div class="info-data"><strong>APM:</strong> ${league.apm.toFixed(2)}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${league.pps.toFixed(2)}</div>
+                        <div class="info-data"><strong>VS:</strong> ${league.vs.toFixed(2)}</div>
+                    `;
+                    break;
+                case '40l':
+                    const sprint = userData.records.sprint;
+                    content = `
+                        <h2>${userData.user.username}의 40 Lines 정보</h2>
+                        <div class="info-data"><strong>최고 기록:</strong> ${sprint.record ? (sprint.record.endcontext.finalTime / 1000).toFixed(3) + '초' : '기록 없음'}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${sprint.record ? sprint.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
+                        <div class="info-data"><strong>Finesse:</strong> ${sprint.record ? sprint.record.endcontext.finesse.toFixed(2) + '%' : '기록 없음'}</div>
+                    `;
+                    break;
+                case 'blitz':
+                    const blitz = userData.records.blitz;
+                    content = `
+                        <h2>${userData.user.username}의 Blitz 정보</h2>
+                        <div class="info-data"><strong>최고 점수:</strong> ${blitz.record ? blitz.record.endcontext.score.toLocaleString() : '기록 없음'}</div>
+                        <div class="info-data"><strong>PPS:</strong> ${blitz.record ? blitz.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
+                        <div class="info-data"><strong>APM:</strong> ${blitz.record ? blitz.record.endcontext.apm.toFixed(2) : '기록 없음'}</div>
+                    `;
+                    break;
+                case 'zen':
+                    const zen = userData.user.zen;
+                    content = `
+                        <h2>${userData.user.username}의 Zen 정보</h2>
+                        <div class="info-data"><strong>레벨:</strong> ${zen.level}</div>
+                        <div class="info-data"><strong>점수:</strong> ${zen.score.toLocaleString()}</div>
+                        <div class="info-data"><strong>놓은 블록 수:</strong> ${zen.pieces.toLocaleString()}</div>
+                    `;
+                    break;
+            }
+
+            infoDiv.innerHTML = content;
         }
 
         async function getQuickPlayInfo() {
@@ -251,73 +308,6 @@
             } catch (error) {
                 infoDiv.innerHTML = `<p class="error">에러 발생: ${error.message}</p>`;
             }
-        }
-
-        function showInfo(category) {
-            if (!userData) {
-                alert('먼저 사용자를 검색해주세요.');
-                return;
-            }
-
-            const infoDiv = document.getElementById('infoContainer');
-            let content = '';
-
-            switch (category) {
-                case 'general':
-                    content = `
-                        <h2>${userData.username}의 일반 정보</h2>
-                        <div class="info-data"><strong>국가:</strong> ${userData.country || '비공개'}</div>
-                        <div class="info-data"><strong>가입일:</strong> ${new Date(userData.ts).toLocaleString()}</div>
-                        <div class="info-data"><strong>플레이한 게임 수:</strong> ${userData.gamesplayed || '정보 없음'}</div>
-                        <div class="info-data"><strong>이긴 게임 수:</strong> ${userData.gameswon || '정보 없음'}</div>
-                        <div class="info-data"><strong>총 플레이 시간:</strong> ${(userData.gametime / 3600).toFixed(2)} 시간</div>
-                        <div class="info-data"><strong>XP:</strong> ${userData.xp.toFixed(2)}</div>
-                        <div class="info-data"><strong>친구 수:</strong> ${userData.friend_count}</div>
-                    `;
-                    break;
-                case 'league':
-                    const league = userData.user.league;
-                    content = `
-                        <h2>${userData.user.username}의 Tetra League 정보</h2>
-                        <div class="info-data"><strong>랭크:</strong> ${league.rank}</div>
-                        <div class="info-data"><strong>레이팅:</strong> ${league.rating.toFixed(2)}</div>
-                        <div class="info-data"><strong>글리코:</strong> ${league.glicko.toFixed(2)}</div>
-                        <div class="info-data"><strong>RD:</strong> ${league.rd.toFixed(2)}</div>
-                        <div class="info-data"><strong>APM:</strong> ${league.apm.toFixed(2)}</div>
-                        <div class="info-data"><strong>PPS:</strong> ${league.pps.toFixed(2)}</div>
-                        <div class="info-data"><strong>VS:</strong> ${league.vs.toFixed(2)}</div>
-                    `;
-                    break;
-                case '40l':
-                    const sprint = userData.records.sprint;
-                    content = `
-                        <h2>${userData.user.username}의 40 Lines 정보</h2>
-                        <div class="info-data"><strong>최고 기록:</strong> ${sprint.record ? (sprint.record.endcontext.finalTime / 1000).toFixed(3) + '초' : '기록 없음'}</div>
-                        <div class="info-data"><strong>PPS:</strong> ${sprint.record ? sprint.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
-                        <div class="info-data"><strong>Finesse:</strong> ${sprint.record ? sprint.record.endcontext.finesse.toFixed(2) + '%' : '기록 없음'}</div>
-                    `;
-                    break;
-                case 'blitz':
-                    const blitz = userData.records.blitz;
-                    content = `
-                        <h2>${userData.user.username}의 Blitz 정보</h2>
-                        <div class="info-data"><strong>최고 점수:</strong> ${blitz.record ? blitz.record.endcontext.score.toLocaleString() : '기록 없음'}</div>
-                        <div class="info-data"><strong>PPS:</strong> ${blitz.record ? blitz.record.endcontext.pps.toFixed(2) : '기록 없음'}</div>
-                        <div class="info-data"><strong>APM:</strong> ${blitz.record ? blitz.record.endcontext.apm.toFixed(2) : '기록 없음'}</div>
-                    `;
-                    break;
-                case 'zen':
-                    const zen = userData.user.zen;
-                    content = `
-                        <h2>${userData.user.username}의 Zen 정보</h2>
-                        <div class="info-data"><strong>레벨:</strong> ${zen.level}</div>
-                        <div class="info-data"><strong>점수:</strong> ${zen.score.toLocaleString()}</div>
-                        <div class="info-data"><strong>놓은 블록 수:</strong> ${zen.pieces.toLocaleString()}</div>
-                    `;
-                    break;
-            }
-
-            infoDiv.innerHTML = content;
         }
     </script>
 </body>

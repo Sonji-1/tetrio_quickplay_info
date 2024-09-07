@@ -1,11 +1,12 @@
 const express = require('express');
 const path = require('path');
-const userInfoRouter = require('./routes/userInfo');
-const fortyLinesRouter = require('./routes/fortyLines');
-const blitzRouter = require('./routes/blitz');
-const quickPlayRouter = require('./routes/quickPlay');
-const tetraLeagueRouter = require('./routes/tetraLeague');
-const zenRouter = require('./routes/zen');
+const userInfoRouter = require('./routers/userInfo');
+const fortyLinesRouter = require('./routers/fortyLines');
+const blitzRouter = require('./routers/blitz');
+const quickPlayRouter = require('./routers/quickPlay');
+const tetraLeagueRouter = require('./routers/tetraLeague');
+const zenRouter = require('./routers/zen');
+const generalInfoRouter = require('./routers/generalInfo'); // 수정된 라우터
 
 const app = express();
 const PORT = 3000;
@@ -18,15 +19,11 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/user', userInfoRouter);
-
+app.use('/api/general', generalInfoRouter); // 수정된 라우터
 app.use('/api/40lines', fortyLinesRouter);
-
 app.use('/api/blitz', blitzRouter);
-
 app.use('/api/quickplay', quickPlayRouter);
-
 app.use('/api/tetraleague', tetraLeagueRouter);
-
 app.use('/api/zen', zenRouter);
 
 // 404 에러 핸들러 추가
